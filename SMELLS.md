@@ -43,7 +43,7 @@ Three smells, each in a different part of the module. For each one, fill in all 
 
 **The principle it violates.** Cohesion (one class, one job)
 
-**What it makes expensive.** Code comprehension and testing. Every future reader has to spend time tracing the QueryCache to work out that it actually does nothing. It also risks future developers introducing bugs if they try to "fix" it by wiring up the `set` without proper invalidation.
+**What it makes expensive.** Code comprehension and testing. Every future reader has to spend time tracing the QueryCache to work out that it actually does nothing. It also risks future developers introducing bugs if they try to "fix" it by wiring up the .set() without proper invalidation.
 
 ---
 
