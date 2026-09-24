@@ -67,24 +67,24 @@ One proposal for each milestone 1 smell you did not fix.
 
 ### Proposal A (not coded)
 
-**The problem.** Name it.
+**The problem.** `ReportGenerator` calculates the duration and price of bookings inside its `occupancy` and `revenue` methods, reaching across boundaries to pull data out of `Booking` and `Room` objects (Feature Envy). This duplicates rules and makes changing pricing risky, as reports might diverge from real bills.
 
-**The decomposition.** What are the pieces, what does each own, and where do the rules live?
+**The decomposition.** Move the duration and price calculation logic out of `ReportGenerator` and into the core domain. We can promote `Booking` from a plain data interface into a class that owns `durationMinutes()` and `calculatePrice(Room)` methods. `ReportGenerator` will then iterate over the list and simply sum up the results of `booking.calculatePrice(room)` instead of doing the math itself.
 
-**One cost.** Something this actually costs. "No real downside" is not a cost.
+**One cost.** Promoting `Booking` to a class breaks its current simple plain-old-data shape. The `InMemoryStorageProvider` currently assumes it can easily clone and save `Booking` objects using the JavaScript spread syntax (`{ ...booking }`), which strips methods. We would have to rewrite how storage instantiates and hydrates objects from the database.
 
 ### Proposal B (not coded)
 
-**The problem.**
+**The problem.** Interval overlap logic (`startsBefore`, `endsAfter`, etc.) is re-implemented in three different ways across `availability.ts`, `reservationManager.ts`, and `reportGenerator.ts` (Duplication over reuse). A change to scheduling bounds (like an implicit 5-minute cleaning gap) requires fixing all three files.
 
-**The decomposition.**
+**The decomposition.** Extract a single shared utility module (`utils/time.ts`) or `TimeInterval` class that owns the mathematical rules for interval overlap. The three separate services will depend on this single shared `intervalsOverlap(start1, end1, start2, end2)` function instead of doing the math themselves inline.
 
-**One cost.**
+**One cost.** It creates a new central dependency hub (`time.ts`), increasing coupling slightly. A simple one-line algebraic check is now hidden behind an import and a function call, so a developer reading `ReservationManager` has to jump to another file just to see if the boundary logic is inclusive or exclusive.
 
 ### The thing that looks smelly but is fine
 
-**What it is.** File and method.
+**What it is.** In `storage/inMemoryStorageProvider.ts`, the `findAll` and `findById` methods perform a full map spread and create a new object clone of every booking on every single read (`return [...this.bookings.values()].map((booking) => ({ ...booking }));`).
 
-**Why it is fine.** Defend it with properties of the code, not with its line count.
+**Why it is fine.** This looks like an extreme performance smell (excessive memory allocation and iteration). However, because this is an in-memory test double, returning defensive copies is critical for correctness. If it returned direct references to the internally stored objects, callers could accidentally or maliciously mutate them (e.g., changing a booking status directly), corrupting the "database" state without going through `ReservationManager`.
 
-**What would flip your verdict.** Name the change that would turn this into a real problem.
+**What would flip your verdict.** If the application scaled to handle millions of bookings in a single production Node process, the memory and CPU cost of deeply copying thousands of objects on every read would become a crippling performance bottleneck, and we would have to switch to an external database.

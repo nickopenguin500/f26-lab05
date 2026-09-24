@@ -1,4 +1,5 @@
 # Lab 5 Starter: reservation-service
+Tools/Models: Antigravity, Gemini Pro
 
 `reservation-service` is a TypeScript module for booking rooms. Callers register rooms,
 create and cancel bookings, price them, query free slots, and pull occupancy and revenue
