@@ -11,41 +11,39 @@ Three smells, each in a different part of the module. For each one, fill in all 
 
 ### Smell 1
 
-**The smell.** Name it, using the vocabulary from lecture.
+**The smell.** Feature envy
 
-**Classic or agent-specific.** Which, and why that label. For agent-specific, say which of
-the lecture's three causes produced it.
+**Classic or agent-specific.** Classic
 
-**Where in the code.** File and, where there is one, method.
+**Where in the code.** revenue and occupancy methods in src/reportGenerator.ts
 
-**The principle it violates.** Name the principle. "This is too big" is not a principle.
+**The principle it violates.** Information Expert
 
-**What it makes expensive.** A concrete future change, or something that already goes wrong
-today. What breaks first?
+**What it makes expensive.** Changing how a booking's duration or price is calculated. The ReportGenerator reaches across the boundary to pull data out of Booking and Room objects to do the math itself. If the internal rules for pricing or duration change, the reporting module will break or silently diverge from the real billing logic.
 
 ### Smell 2
 
-**The smell.**
+**The smell.** Duplication over reuse
 
-**Classic or agent-specific.**
+**Classic or agent-specific.** Agent-specific. It was caused by missing context. The agent re-implemented the interval overlap check three different times because the existing checks were not in its active context, so it rebuilt the logic instead of reusing it.
 
-**Where in the code.**
+**Where in the code.** isSlotFree in availabililty.ts, hasConflict in reservationManager.ts, overlapsWindow in reportGenerator.ts
 
-**The principle it violates.**
+**The principle it violates.** Information Expert (behavior near data)
 
-**What it makes expensive.**
+**What it makes expensive.** Changing the rules for scheduling boundaries. If the business decides that bookings should have an automatic 5-minute cleaning gap, a developer has to track down and modify the overlap logic in three separate files.
 
 ### Smell 3
 
-**The smell.**
+**The smell.** Phantom complexity
 
-**Classic or agent-specific.**
+**Classic or agent-specific.** Agent-specific. It was caused by free volume. Generating extra code costs the agent nothing, so it added a sophisticated-looking QueryCache to the manager. But because it never wrote the cache.set() logic, the cache handles cases that can't occur and does almost nothing.
 
-**Where in the code.**
+**Where in the code.** listBookingsForRoom in reservationManager.ts
 
-**The principle it violates.**
+**The principle it violates.** Cohesion (one class, one job)
 
-**What it makes expensive.**
+**What it makes expensive.** Code comprehension and testing. Every future reader has to spend time tracing the QueryCache to work out that it actually does nothing. It also risks future developers introducing bugs if they try to "fix" it by wiring up the `set` without proper invalidation.
 
 ---
 
